@@ -7,6 +7,7 @@ using System.Text;
 public class mTonBehaviourInspecter : Editor {
    public static  List<string> mSelectTypeStr = new List<string>();
     Dictionary<string, System.Object> mFields = new Dictionary<string, System.Object>();
+    bool mDraw = true;
     void OnEnable()
     {
         InitClass();
@@ -94,8 +95,11 @@ public class mTonBehaviourInspecter : Editor {
     }
     public override void OnInspectorGUI()
     {
-        base.OnInspectorGUI();
-        //DrawGUI();
+        //base.OnInspectorGUI();
+        //if (mDraw)
+        //    DrawGUI();
+        //else
+            base.OnInspectorGUI();
     }
     void DrawGUI()
     {
@@ -120,7 +124,11 @@ public class mTonBehaviourInspecter : Editor {
                 InitClass();
             if (GUILayout.Button("ReloadField"))
                 InitFields();
+           
             EditorGUILayout.EndHorizontal();
+            string szMod = mDraw ? "freedom" : "comstom";
+            if (GUILayout.Button(szMod))
+                mDraw = !mDraw;
             EditorGUILayout.Space();
             EditorGUILayout.Space();
             EditorGUILayout.Space();
@@ -199,44 +207,93 @@ public class mTonBehaviourInspecter : Editor {
     {
         if (type == "int")
         {
-            curInject.mInt = EditorGUILayout.IntField(curInject.mKey +"("+type+")",curInject.mInt);
-            curInject.mFloat = 0;
-            curInject.mGo = null;
-            curInject.mText = null;
-            curInject.mBool = false;
+            int i = EditorGUILayout.IntField(curInject.mKey + "(" + type + ")", curInject.mInt);
+            if(i != curInject.mInt)
+            {
+                curInject.mInt = i;
+                curInject.mFloat = 0;
+                curInject.mGo = null;
+                curInject.mText = null;
+                curInject.mBool = false;
+                UnityEditor.EditorUtility.SetDirty(serializedObject.targetObject);
+                serializedObject.SetIsDifferentCacheDirty();
+                serializedObject.Update();
+                serializedObject.ApplyModifiedProperties();
+                serializedObject.UpdateIfDirtyOrScript();
+            }
+           
         }
         else if (type == "float")
         {
-            curInject.mInt = 0;
-            curInject.mFloat = EditorGUILayout.FloatField(curInject.mKey + "(" + type + ")", curInject.mInt);
-            curInject.mGo = null;
-            curInject.mText = null;
-            curInject.mBool = false;
+            float t = EditorGUILayout.FloatField(curInject.mKey + "(" + type + ")", curInject.mFloat);
+            if(t != curInject.mFloat)
+            {
+                curInject.mInt = 0;
+                curInject.mFloat = t;
+                curInject.mGo = null;
+                curInject.mText = null;
+                curInject.mBool = false;
+                serializedObject.SetIsDifferentCacheDirty();
+                UnityEditor.EditorUtility.SetDirty(serializedObject.targetObject);
+                serializedObject.Update();
+                serializedObject.ApplyModifiedProperties();
+                serializedObject.UpdateIfDirtyOrScript();
+            }
+           
         }
         else if (type == "bool")
         {
-            curInject.mInt = 0;
-            curInject.mFloat = 0;
-            curInject.mGo = null;
-            curInject.mText = null;
-            curInject.mBool = EditorGUILayout.Toggle(curInject.mKey + "(" + type + ")", curInject.mBool);
+            bool temp = EditorGUILayout.Toggle(curInject.mKey + "(" + type + ")", curInject.mBool);
+            if(temp != curInject.mBool)
+            {
+                curInject.mInt = 0;
+                curInject.mFloat = 0;
+                curInject.mGo = null;
+                curInject.mText = null;
+                curInject.mBool = temp ;
+                UnityEditor.EditorUtility.SetDirty(serializedObject.targetObject);
+                serializedObject.SetIsDifferentCacheDirty();
+                serializedObject.Update();
+                serializedObject.ApplyModifiedProperties();
+                serializedObject.UpdateIfDirtyOrScript();
+            }
+           
         }
         else if(type == "string")
         {
-            curInject.mInt = 0;
-            curInject.mFloat = 0;
-            curInject.mGo = null;
-            curInject.mText = EditorGUILayout.TextField(curInject.mKey + "(" + type + ")", curInject.mText);
-            curInject.mBool = false;
+            string temp = EditorGUILayout.TextField(curInject.mKey + "(" + type + ")", curInject.mText);
+            if(temp != curInject.mText)
+            {
+                curInject.mInt = 0;
+                curInject.mFloat = 0;
+                curInject.mGo = null;
+                curInject.mText =  temp;
+                curInject.mBool = false;
+                UnityEditor.EditorUtility.SetDirty(serializedObject.targetObject);
+                serializedObject.SetIsDifferentCacheDirty();
+                serializedObject.Update();
+                serializedObject.ApplyModifiedProperties();
+                serializedObject.UpdateIfDirtyOrScript();
+            }
+        
         }
         else
         {
-
-            curInject.mInt = 0;
-            curInject.mFloat = 0;
-            curInject.mGo =(GameObject) EditorGUILayout.ObjectField(curInject.mKey + "(" + type + ")", curInject.mGo,typeof(GameObject),true);
-            curInject.mText = null;
-            curInject.mBool = false;
+            GameObject temp = (GameObject)EditorGUILayout.ObjectField(curInject.mKey + "(" + type + ")", curInject.mGo, typeof(GameObject), true);
+            if(temp != curInject.mGo)
+            {
+                curInject.mInt = 0;
+                curInject.mFloat = 0;
+                curInject.mGo = temp;
+                curInject.mText = null;
+                curInject.mBool = false;
+                UnityEditor.EditorUtility.SetDirty(serializedObject.targetObject);
+                serializedObject.SetIsDifferentCacheDirty();
+                serializedObject.UpdateIfDirtyOrScript();
+                serializedObject.Update();
+                serializedObject.ApplyModifiedProperties();
+            }
+         
         }
     }
     public static void InitClass()
