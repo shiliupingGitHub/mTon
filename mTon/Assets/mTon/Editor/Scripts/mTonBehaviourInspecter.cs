@@ -128,10 +128,10 @@ public class mTonBehaviourInspecter : Editor {
             if (template != mSelectTypeStr[selectId])
             {
                 serializedObject.FindProperty("mTemplate").stringValue = mSelectTypeStr[selectId];
-                serializedObject.FindProperty("Injecttion").ClearArray();
                 InitFields();
             }
-            EditorGUILayout.BeginVertical();
+     
+            EditorGUILayout.BeginVertical("box");
 
             SerializedProperty sp = serializedObject.FindProperty("Injecttion");
 
