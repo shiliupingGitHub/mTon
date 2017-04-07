@@ -36,50 +36,50 @@ public class mTonBehaviourInspecter : Editor {
             sb.Append("\n");
             sb.Append("\t");
             sb.Append("public	override void Init(mTonBehaviour s)\n\t{");
+            sb.Append("\n\t\t mTonInjection temp = null;");
             foreach(var f in fields)
             {
                 sb.Append("\n");
                 sb.Append("\t\t");
-               
-                if(f.Value.ToString() == "int")
+                sb.Append("temp = " + "s.GetInject(\"" + f.Key + "\");\n");
+                sb.Append("\t\t");
+                sb.Append("if (null != temp)\n\t\t{\n\t\t\t");
+                if (f.Value.ToString() == "int")
                 {
-                    sb.Append(f.Key + "= s.GetInject(\"" + f.Key + "\")");
-                    sb.Append(".");
+                    sb.Append(f.Key + "= temp.");
+      
                     sb.Append("mInt");
                 }
                 else if(f.Value.ToString() =="float")
                 {
-                    sb.Append(f.Key + "= s.GetInject(\"" + f.Key + "\")");
-                    sb.Append(".");
+                    sb.Append(f.Key + "= temp.");
                     sb.Append("mFloat");
                 }
                 else if(f.Value.ToString() == "string")
                 {
-                    sb.Append(f.Key + "= s.GetInject(\"" + f.Key + "\")");
-                    sb.Append(".");
+                    sb.Append(f.Key + "= temp.");
                     sb.Append("mText");
                 }
                 else if (f.Value.ToString() == "bool")
                 {
-                    sb.Append(f.Key + "= s.GetInject(\"" + f.Key + "\")");
-                    sb.Append(".");
+                    sb.Append(f.Key + "= temp.");
                     sb.Append("mBool");
                 }
                 else if(f.Value.ToString() == "GameObject")
                 {
-                    sb.Append(f.Key + "= s.GetInject(\"" + f.Key + "\")");
-                    sb.Append(".");
+                    sb.Append(f.Key + "= temp.");
                     sb.Append("mGo");
                 }
                 else
                 {
-                    sb.Append("if (null != s.GetInject(\"" + f.Key + "\"))\n\t\t\t");
-                    sb.Append(f.Key + "= s.GetInject(\"" + f.Key + "\")");
-                    sb.Append(".");
+                    sb.Append("if(temp.mGo != null)\n\t\t\t\t");
+                    sb.Append(f.Key + "= temp.");
                     sb.Append("mGo.GetComponent<" + f.Value.ToString()+">()");
                 }
+                
                 sb.Append(";");
                 sb.Append("\n");
+                sb.Append("\t\t}\n");
             }
             sb.Append("\n\t}");
             sb.Append("\n}");
@@ -95,22 +95,15 @@ public class mTonBehaviourInspecter : Editor {
     }
     public override void OnInspectorGUI()
     {
-        //base.OnInspectorGUI();
-        //if (mDraw)
-        //    DrawGUI();
-        //else
-            base.OnInspectorGUI();
+        DrawGUI();
     }
     void DrawGUI()
     {
-        serializedObject.Update();
-        serializedObject.UpdateIfDirtyOrScript();
-        mTonBehaviour mton = (mTonBehaviour)target;
+        string template = serializedObject.FindProperty("mTemplate").stringValue;
         int selectId = 0;
-
         for (int i = 0; i < mSelectTypeStr.Count; i++)
         {
-            if (mSelectTypeStr[i] == mton.mTemplate)
+            if (mSelectTypeStr[i] == template)
             {
                 selectId = i;
                 break;
@@ -120,15 +113,8 @@ public class mTonBehaviourInspecter : Editor {
         {
             EditorGUILayout.BeginHorizontal();
             int cur = EditorGUILayout.Popup(selectId, mSelectTypeStr.ToArray());
-            if (GUILayout.Button("ReloadClass"))
-                InitClass();
-            if (GUILayout.Button("ReloadField"))
-                InitFields();
-           
             EditorGUILayout.EndHorizontal();
-            string szMod = mDraw ? "freedom" : "comstom";
-            if (GUILayout.Button(szMod))
-                mDraw = !mDraw;
+     
             EditorGUILayout.Space();
             EditorGUILayout.Space();
             EditorGUILayout.Space();
@@ -139,161 +125,91 @@ public class mTonBehaviourInspecter : Editor {
                 selectId = cur;
 
             }
-            if (mton.mTemplate != mSelectTypeStr[selectId])
+            if (template != mSelectTypeStr[selectId])
             {
-                mton.mTemplate = mSelectTypeStr[selectId];
-                mton.Injecttion.Clear();
+                serializedObject.FindProperty("mTemplate").stringValue = mSelectTypeStr[selectId];
+                serializedObject.FindProperty("Injecttion").ClearArray();
                 InitFields();
             }
             EditorGUILayout.BeginVertical();
 
+            SerializedProperty sp = serializedObject.FindProperty("Injecttion");
 
-            if (null != mton.Injecttion)
+            if (null != sp)
             {
-                List<mTonInjection> rm = new List<mTonInjection>();
-                foreach (var inject in mton.Injecttion)
+                for(int i = 0; i < sp.arraySize; i++)
                 {
-                    if (!mFields.ContainsKey(inject.mKey)
-                        ||string.IsNullOrEmpty(inject.key)
-                        )
-                        rm.Add(inject);
-                }
-                foreach (var r in rm)
-                {
-                    mton.Injecttion.Remove(r);
-                }
-            }
-
-            List<string> mLost = new List<string>();
-            foreach (var f in mFields)
-            {
-                mTonInjection curInject = null;
-                if (null != mton.Injecttion)
-                {
-                    foreach (var inject in mton.Injecttion)
+                    SerializedProperty sub = sp.GetArrayElementAtIndex(i);
+                    
+                    string key = sub.FindPropertyRelative("mKey").stringValue;
+                    if (!mFields.ContainsKey(key))
+                        sp.DeleteArrayElementAtIndex(i);
+                    else
                     {
-                        if (inject.mKey == f.Key)
-                        {
-                            curInject = inject;
-                            break;
-                        }
+                        ShowInject(sub, mFields[key].ToString());
                     }
                 }
-
-                if (null != curInject)
+                foreach(var f in mFields)
                 {
-                    string type = f.Value.ToString();
-                    ShowInject(curInject, type);
-                    // System.Type.GetType(type);
+                    bool contain = false;
+                    for (int i = 0; i < sp.arraySize; i++)
+                    {
+                        SerializedProperty sub = sp.GetArrayElementAtIndex(i);
+                        string key = sub.FindPropertyRelative("mKey").stringValue;
+                        if (key == f.Key)
+                            contain = true;
+                    }
+                    if(!contain)
+                    {
+                        sp.InsertArrayElementAtIndex(0);
+                        SerializedProperty sub = sp.GetArrayElementAtIndex(0);
+                        SerializedProperty keySp = sub.FindPropertyRelative("mKey");
+                        keySp.stringValue = f.Key;
+                        ShowInject(sub, f.Value.ToString());
+                    }
                 }
-                else
-                    mLost.Add(f.Key);
-            }
-            foreach (var k in mLost)
-            {
-               
-                mTonInjection curInject = new mTonInjection();
-                curInject.mKey = k;
-                mton.Injecttion.Add(curInject);
-                ShowInject(curInject, mFields[k].ToString());
             }
 
             EditorGUILayout.EndVertical();
+    
 
         }
+        if (GUI.changed)
+            EditorUtility.SetDirty(target);
         serializedObject.ApplyModifiedProperties();
     }
-    void ShowInject(mTonInjection curInject, string type)
+    void ShowInject(SerializedProperty sp, string type)
     {
+        string key = sp.FindPropertyRelative("mKey").stringValue;
         if (type == "int")
         {
-            int i = EditorGUILayout.IntField(curInject.mKey + "(" + type + ")", curInject.mInt);
-            if(i != curInject.mInt)
-            {
-                curInject.mInt = i;
-                curInject.mFloat = 0;
-                curInject.mGo = null;
-                curInject.mText = null;
-                curInject.mBool = false;
-                UnityEditor.EditorUtility.SetDirty(serializedObject.targetObject);
-                serializedObject.SetIsDifferentCacheDirty();
-                serializedObject.Update();
-                serializedObject.ApplyModifiedProperties();
-                serializedObject.UpdateIfDirtyOrScript();
-            }
+            string title = key + "(" + type + ")";
+            EditorGUILayout.PropertyField(sp.FindPropertyRelative("mInt"), new GUIContent(title));
            
         }
         else if (type == "float")
         {
-            float t = EditorGUILayout.FloatField(curInject.mKey + "(" + type + ")", curInject.mFloat);
-            if(t != curInject.mFloat)
-            {
-                curInject.mInt = 0;
-                curInject.mFloat = t;
-                curInject.mGo = null;
-                curInject.mText = null;
-                curInject.mBool = false;
-                serializedObject.SetIsDifferentCacheDirty();
-                UnityEditor.EditorUtility.SetDirty(serializedObject.targetObject);
-                serializedObject.Update();
-                serializedObject.ApplyModifiedProperties();
-                serializedObject.UpdateIfDirtyOrScript();
-            }
-           
+            string title = key + "(" + type + ")";
+            EditorGUILayout.PropertyField(sp.FindPropertyRelative("mFloat"), new GUIContent(title));
+
         }
         else if (type == "bool")
         {
-            bool temp = EditorGUILayout.Toggle(curInject.mKey + "(" + type + ")", curInject.mBool);
-            if(temp != curInject.mBool)
-            {
-                curInject.mInt = 0;
-                curInject.mFloat = 0;
-                curInject.mGo = null;
-                curInject.mText = null;
-                curInject.mBool = temp ;
-                UnityEditor.EditorUtility.SetDirty(serializedObject.targetObject);
-                serializedObject.SetIsDifferentCacheDirty();
-                serializedObject.Update();
-                serializedObject.ApplyModifiedProperties();
-                serializedObject.UpdateIfDirtyOrScript();
-            }
-           
+
+            string title = key + "(" + type + ")";
+            EditorGUILayout.PropertyField(sp.FindPropertyRelative("mBool"), new GUIContent(title));
         }
         else if(type == "string")
         {
-            string temp = EditorGUILayout.TextField(curInject.mKey + "(" + type + ")", curInject.mText);
-            if(temp != curInject.mText)
-            {
-                curInject.mInt = 0;
-                curInject.mFloat = 0;
-                curInject.mGo = null;
-                curInject.mText =  temp;
-                curInject.mBool = false;
-                UnityEditor.EditorUtility.SetDirty(serializedObject.targetObject);
-                serializedObject.SetIsDifferentCacheDirty();
-                serializedObject.Update();
-                serializedObject.ApplyModifiedProperties();
-                serializedObject.UpdateIfDirtyOrScript();
-            }
-        
+
+            string title = key + "(" + type + ")";
+            EditorGUILayout.PropertyField(sp.FindPropertyRelative("mText"), new GUIContent(title));
         }
         else
         {
-            GameObject temp = (GameObject)EditorGUILayout.ObjectField(curInject.mKey + "(" + type + ")", curInject.mGo, typeof(GameObject), true);
-            if(temp != curInject.mGo)
-            {
-                curInject.mInt = 0;
-                curInject.mFloat = 0;
-                curInject.mGo = temp;
-                curInject.mText = null;
-                curInject.mBool = false;
-                UnityEditor.EditorUtility.SetDirty(serializedObject.targetObject);
-                serializedObject.SetIsDifferentCacheDirty();
-                serializedObject.UpdateIfDirtyOrScript();
-                serializedObject.Update();
-                serializedObject.ApplyModifiedProperties();
-            }
-         
+            string title = key + "(" + type + ")";
+            EditorGUILayout.PropertyField(sp.FindPropertyRelative("mGo"), new GUIContent(title));
+
         }
     }
     public static void InitClass()
