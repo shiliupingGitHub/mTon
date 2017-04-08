@@ -99,6 +99,7 @@ public class mTonBehaviourInspecter : Editor {
     }
     void DrawGUI()
     {
+        
         string template = serializedObject.FindProperty("mTemplate").stringValue;
         int selectId = 0;
         for (int i = 0; i < mSelectTypeStr.Count; i++)
@@ -111,6 +112,7 @@ public class mTonBehaviourInspecter : Editor {
         }
         if (mSelectTypeStr.Count > 0)
         {
+            InitFields();
             EditorGUILayout.BeginHorizontal();
             int cur = EditorGUILayout.Popup(selectId, mSelectTypeStr.ToArray());
             EditorGUILayout.EndHorizontal();
@@ -125,12 +127,6 @@ public class mTonBehaviourInspecter : Editor {
                 selectId = cur;
 
             }
-            if (template != mSelectTypeStr[selectId])
-            {
-                serializedObject.FindProperty("mTemplate").stringValue = mSelectTypeStr[selectId];
-                InitFields();
-            }
-     
             EditorGUILayout.BeginVertical("box");
 
             SerializedProperty sp = serializedObject.FindProperty("Injecttion");
@@ -175,7 +171,11 @@ public class mTonBehaviourInspecter : Editor {
 
         }
         if (GUI.changed)
+        {
+            InitFields();
+            serializedObject.FindProperty("mTemplate").stringValue = mSelectTypeStr[selectId];
             EditorUtility.SetDirty(target);
+        }
         serializedObject.ApplyModifiedProperties();
     }
     void ShowInject(SerializedProperty sp, string type)

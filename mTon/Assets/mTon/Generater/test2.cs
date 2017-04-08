@@ -6,7 +6,7 @@ public  partial class test2 : mTonBase
 	string	m4;
 	bool	m5;
 	GameObject	m6;
-	public void Init(mTonBehaviour s)
+	public  void Init(mTonBehaviour s)
 	{
 		 mTonInjection temp = null;
 		temp = s.GetInject("m2");
