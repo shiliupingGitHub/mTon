@@ -1,10 +1,9 @@
-{
-"m2":"Light",
-"m3":"int",
-"m4":"string",
-"m5":"bool",
-"m6":"GameObject",
-"m7":"Animation"
-}
+﻿[
+ {
+   "field":"m1",
+   "type":"Light",
+   "des":"场景灯光"
+ }
+]
 
 

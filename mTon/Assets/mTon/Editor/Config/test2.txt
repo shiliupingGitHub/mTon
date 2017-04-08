@@ -1,9 +1,0 @@
-{
-"l2":"Light",
-"l3":"int",
-"l4":"string",
-"l5":"bool",
-"l6":"GameObject"
-}
-
-

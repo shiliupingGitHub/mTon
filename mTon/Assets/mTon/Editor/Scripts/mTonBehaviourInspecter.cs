@@ -6,7 +6,7 @@ using System.Text;
 [CustomEditor(typeof(mTonBehaviour))]
 public class mTonBehaviourInspecter : Editor {
    public static  List<string> mSelectTypeStr = new List<string>();
-    Dictionary<string, System.Object> mFields = new Dictionary<string, System.Object>();
+    Dictionary<string, mTonFieldInfo> mFields = new Dictionary<string, mTonFieldInfo>();
     void OnEnable()
     {
         InitClass();
@@ -21,16 +21,19 @@ public class mTonBehaviourInspecter : Editor {
             TextAsset ta = (TextAsset)Selection.activeObject;
             sb.Append("using UnityEngine;\n");
             sb.Append("public  partial class " + ta.name + " : mTonBase \n{");
-            System.Object o = mTonMiniJSON.Json.Deserialize(ta.text);
-            Dictionary<string, System.Object> fields = o as Dictionary<string, System.Object>;
+            //System.Object o = mTonMiniJSON.Json.Deserialize(ta.text);
+            Dictionary<string, mTonFieldInfo> fields = mTonFieldInfo.Deserilize(ta.text);
             foreach (var f in fields)
             {
-                sb.Append("\n");
+               sb.Append("\n");
                 sb.Append("\t");
-                sb.Append(f.Value.ToString());
+                sb.Append(f.Value.mSzType.ToString());
                 sb.Append("\t");
                 sb.Append(f.Key);
                 sb.Append(";");
+                sb.Append("\t//");
+                sb.Append(f.Value.mSzDes);
+               
             }
             sb.Append("\n");
             sb.Append("\t");
@@ -39,12 +42,12 @@ public class mTonBehaviourInspecter : Editor {
             {
                 sb.Append("\n");
                 sb.Append("\t\t");
-                if(mTonTools.IsValueType(f.Value.ToString()))
+                if(mTonTools.IsValueType(f.Value.mSzType))
                 {
-                    sb.Append(f.Key + "=s.get_" + f.Value.ToString().ToLower() + "(\"" + f.Key + "\")");
+                    sb.Append(f.Key + "=s.get_" + f.Value.mSzType.ToLower() + "(\"" + f.Key + "\")");
                 }
                 else
-                    sb.Append(f.Key + "=" + "(" + f.Value.ToString() + ") s.get_object(\"" + f.Key + "\",\"" + f.Value.ToString() + "\")");
+                    sb.Append(f.Key + "=" + "(" + f.Value.mSzType + ") s.get_object(\"" + f.Key + "\",\"" + f.Value.mSzType + "\")");
                 
                 sb.Append(";");
                 sb.Append("\n");
@@ -170,24 +173,25 @@ public class mTonBehaviourInspecter : Editor {
         EditorGUILayout.Space();
         EditorGUILayout.Space();
     }
-    void ShowInject(SerializedProperty sp, string type, SerializedProperty array,int i)
+    void ShowInject(SerializedProperty sp, string type, SerializedProperty array, int i)
     {
         EditorGUILayout.BeginHorizontal();
         string key = sp.FindPropertyRelative("mKey").stringValue;
         // string title = key + "(" + type + ")";
         int selectId = 0;
         List<string> selectStr = GetSelectFieldKey(type);
-       for(int j = 0; j < selectStr.Count; j++)
+        for (int j = 0; j < selectStr.Count; j++)
         {
-            if(key == selectStr[j])
+            if (key == selectStr[j])
             {
                 selectId = j;
                 break;
             }
         }
-       
-        string szType = mFields[selectStr[selectId]].ToString();
-        string szTitle = selectStr[selectId] + "(" + szType + ")";
+
+        string szType = mFields[selectStr[selectId]].mSzType;
+        string szDes = mFields[selectStr[selectId]].mSzDes;
+        string szTitle = selectStr[selectId] + "(" + szType + ")(" + szDes+")";
         selectId = EditorGUILayout.Popup(szTitle, selectId, selectStr.ToArray());
         if (key != selectStr[selectId])
         {
@@ -223,7 +227,7 @@ public class mTonBehaviourInspecter : Editor {
         szType = szType.ToLower();
         foreach(var f in mFields)
         {
-            string curType = f.Value.ToString();
+            string curType = f.Value.mSzType;
             if(mTonTools.IsValueType(curType)
                 )
             {
@@ -249,8 +253,7 @@ public class mTonBehaviourInspecter : Editor {
             if (!File.Exists(szPath))
                 return;
            string file =  File.ReadAllText(szPath);
-            System.Object o = mTonMiniJSON.Json.Deserialize(file);
-            mFields = o as Dictionary<string, System.Object>;
+            mFields = mTonFieldInfo.Deserilize(file);
         }
     }
 }

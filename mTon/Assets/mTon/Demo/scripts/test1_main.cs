@@ -21,12 +21,7 @@ public partial class test1
 {
     public void Log()
     {
-        Debug.Log(m2);
-        Debug.Log(m3);
-        Debug.Log(m4);
-        Debug.Log(m5);
-        Debug.Log(m6);
-        Debug.Log(m7);
+        Debug.Log(m1);
 
     }
 }
