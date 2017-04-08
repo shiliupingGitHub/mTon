@@ -7,7 +7,6 @@ using System.Text;
 public class mTonBehaviourInspecter : Editor {
    public static  List<string> mSelectTypeStr = new List<string>();
     Dictionary<string, System.Object> mFields = new Dictionary<string, System.Object>();
-    bool mDraw = true;
     void OnEnable()
     {
         InitClass();
@@ -36,50 +35,19 @@ public class mTonBehaviourInspecter : Editor {
             sb.Append("\n");
             sb.Append("\t");
             sb.Append("public  void Init(mTonBehaviour s)\n\t{");
-            sb.Append("\n\t\t mTonInjection temp = null;");
             foreach(var f in fields)
             {
                 sb.Append("\n");
                 sb.Append("\t\t");
-                sb.Append("temp = " + "s.GetInject(\"" + f.Key + "\");\n");
-                sb.Append("\t\t");
-                sb.Append("if (null != temp)\n\t\t{\n\t\t\t");
-                if (f.Value.ToString() == "int")
+                if(mTonTools.IsValueType(f.Value.ToString()))
                 {
-                    sb.Append(f.Key + "= temp.");
-      
-                    sb.Append("mInt");
-                }
-                else if(f.Value.ToString() =="float")
-                {
-                    sb.Append(f.Key + "= temp.");
-                    sb.Append("mFloat");
-                }
-                else if(f.Value.ToString() == "string")
-                {
-                    sb.Append(f.Key + "= temp.");
-                    sb.Append("mText");
-                }
-                else if (f.Value.ToString() == "bool")
-                {
-                    sb.Append(f.Key + "= temp.");
-                    sb.Append("mBool");
-                }
-                else if(f.Value.ToString() == "GameObject")
-                {
-                    sb.Append(f.Key + "= temp.");
-                    sb.Append("mGo");
+                    sb.Append(f.Key + "=s.get_" + f.Value.ToString().ToLower() + "(\"" + f.Key + "\")");
                 }
                 else
-                {
-                    sb.Append("if(temp.mGo != null)\n\t\t\t\t");
-                    sb.Append(f.Key + "= temp.");
-                    sb.Append("mGo.GetComponent<" + f.Value.ToString()+">()");
-                }
+                    sb.Append(f.Key + "=" + "(" + f.Value.ToString() + ") s.get_object(\"" + f.Key + "\",\"" + f.Value.ToString() + "\")");
                 
                 sb.Append(";");
                 sb.Append("\n");
-                sb.Append("\t\t}\n");
             }
             sb.Append("\n\t}");
             sb.Append("\n}");
@@ -95,6 +63,7 @@ public class mTonBehaviourInspecter : Editor {
     }
     public override void OnInspectorGUI()
     {
+        //base.OnInspectorGUI();
         DrawGUI();
     }
     void DrawGUI()
@@ -119,56 +88,18 @@ public class mTonBehaviourInspecter : Editor {
      
             EditorGUILayout.Space();
             EditorGUILayout.Space();
-            EditorGUILayout.Space();
-            EditorGUILayout.Space();
             EditorGUILayout.Separator();
             if (cur != selectId)
             {
                 selectId = cur;
 
             }
-            EditorGUILayout.BeginVertical("box");
-
-            SerializedProperty sp = serializedObject.FindProperty("Injecttion");
-
-            if (null != sp)
-            {
-                for(int i = 0; i < sp.arraySize; i++)
-                {
-                    SerializedProperty sub = sp.GetArrayElementAtIndex(i);
-                    
-                    string key = sub.FindPropertyRelative("mKey").stringValue;
-                    if (!mFields.ContainsKey(key))
-                        sp.DeleteArrayElementAtIndex(i);
-                    else
-                    {
-                        ShowInject(sub, mFields[key].ToString());
-                    }
-                }
-                foreach(var f in mFields)
-                {
-                    bool contain = false;
-                    for (int i = 0; i < sp.arraySize; i++)
-                    {
-                        SerializedProperty sub = sp.GetArrayElementAtIndex(i);
-                        string key = sub.FindPropertyRelative("mKey").stringValue;
-                        if (key == f.Key)
-                            contain = true;
-                    }
-                    if(!contain)
-                    {
-                        sp.InsertArrayElementAtIndex(0);
-                        SerializedProperty sub = sp.GetArrayElementAtIndex(0);
-                        SerializedProperty keySp = sub.FindPropertyRelative("mKey");
-                        keySp.stringValue = f.Key;
-                        ShowInject(sub, f.Value.ToString());
-                    }
-                }
-            }
-
-            EditorGUILayout.EndVertical();
-    
-
+            ShowInjections("Go");
+            ShowInjections("Float");
+            ShowInjections("Int");
+            ShowInjections("Bool");
+            ShowInjections("String");
+            ShowSelfDefine();
         }
         if (GUI.changed)
         {
@@ -178,39 +109,99 @@ public class mTonBehaviourInspecter : Editor {
         }
         serializedObject.ApplyModifiedProperties();
     }
-    void ShowInject(SerializedProperty sp, string type)
+    void ShowSelfDefine()
     {
+        EditorGUILayout.BeginVertical("box");
+        SerializedProperty sp = serializedObject.FindProperty("mSelfDefine");
+        EditorGUILayout.LabelField("SelfDefine");
+        EditorGUILayout.Space();
+        //EditorGUILayout.PropertyField(sp);
+        for (int i = 0; i < sp.arraySize; i++)
+        {
+            SerializedProperty sub = sp.GetArrayElementAtIndex(i);
+            ShowSubSelfDefine(sub, i,sp);
+        }
+        if (GUILayout.Button("add"))
+        {
+            sp.InsertArrayElementAtIndex(0);
+            
+
+        }
+        EditorGUILayout.EndVertical();
+    }
+    void ShowSubSelfDefine(SerializedProperty sub,int i, SerializedProperty array)
+    {
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.PropertyField(sub);
+        if (GUILayout.Button("remove"))
+        {
+            array.DeleteArrayElementAtIndex(i);
+        }
+        EditorGUILayout.EndHorizontal();
+    }
+     void ShowInjections(string szType)
+    {
+       
+        string szFiled = "m" + szType + "Injection";
+        SerializedProperty sp = serializedObject.FindProperty(szFiled);
+        int totolCount = GetSelectFieldKey(szType).Count;
+        if (totolCount == 0)
+        {
+            sp.ClearArray();
+            return;
+        }
+        EditorGUILayout.LabelField(szType);
+        EditorGUILayout.Space();
+        EditorGUILayout.BeginVertical("box");
+        for (int i = 0; i < sp.arraySize; i++)
+        {
+            SerializedProperty sub =  sp.GetArrayElementAtIndex(i);
+            ShowInject(sub, szType,sp,i);
+        }
+        if(totolCount > sp.arraySize)
+        {
+            if (GUILayout.Button("add"))
+            {
+                sp.InsertArrayElementAtIndex(0);
+            }
+        }
+
+        EditorGUILayout.EndVertical();
+        EditorGUILayout.Space();
+        EditorGUILayout.Space();
+    }
+    void ShowInject(SerializedProperty sp, string type, SerializedProperty array,int i)
+    {
+        EditorGUILayout.BeginHorizontal();
         string key = sp.FindPropertyRelative("mKey").stringValue;
-        if (type == "int")
+        // string title = key + "(" + type + ")";
+        int selectId = 0;
+        List<string> selectStr = GetSelectFieldKey(type);
+       for(int j = 0; j < selectStr.Count; j++)
         {
-            string title = key + "(" + type + ")";
-            EditorGUILayout.PropertyField(sp.FindPropertyRelative("mInt"), new GUIContent(title));
-           
+            if(key == selectStr[j])
+            {
+                selectId = j;
+                break;
+            }
         }
-        else if (type == "float")
+        string szType = mFields[key].ToString();
+        string szTitle = key + "(" + szType + ")";
+        selectId = EditorGUILayout.Popup(szTitle, selectId, selectStr.ToArray());
+        if (key != selectStr[selectId])
         {
-            string title = key + "(" + type + ")";
-            EditorGUILayout.PropertyField(sp.FindPropertyRelative("mFloat"), new GUIContent(title));
+            key = selectStr[selectId];
+            sp.FindPropertyRelative("mKey").stringValue = key;
+            
+        }
+        ;
+        EditorGUILayout.PropertyField(sp.FindPropertyRelative("mV"), new GUIContent(string.Empty));
+       if(GUILayout.Button("remove"))
+        {
+            array.DeleteArrayElementAtIndex(i);
+        }
+        EditorGUILayout.EndHorizontal();
 
-        }
-        else if (type == "bool")
-        {
-
-            string title = key + "(" + type + ")";
-            EditorGUILayout.PropertyField(sp.FindPropertyRelative("mBool"), new GUIContent(title));
-        }
-        else if(type == "string")
-        {
-
-            string title = key + "(" + type + ")";
-            EditorGUILayout.PropertyField(sp.FindPropertyRelative("mText"), new GUIContent(title));
-        }
-        else
-        {
-            string title = key + "(" + type + ")";
-            EditorGUILayout.PropertyField(sp.FindPropertyRelative("mGo"), new GUIContent(title));
-
-        }
     }
     public static void InitClass()
     {
@@ -223,6 +214,29 @@ public class mTonBehaviourInspecter : Editor {
             string s = Path.GetFileNameWithoutExtension(f);
             mTonBehaviourInspecter.mSelectTypeStr.Add(s);
         }
+    }
+
+    List<string> GetSelectFieldKey(string szType)
+    {
+        List<string> ret = new List<string>();
+        szType = szType.ToLower();
+        foreach(var f in mFields)
+        {
+            string curType = f.Value.ToString();
+            if(mTonTools.IsValueType(curType)
+                )
+            {
+                if (curType == szType)
+                    ret.Add(f.Key);
+
+            }
+            else
+            {
+                if (!mTonTools.IsValueType(szType))
+                    ret.Add(f.Key);
+            }
+        }
+        return ret;
     }
     void InitFields()
     {

@@ -9,44 +9,17 @@ public  partial class test1 : mTonBase
 	Animation	m7;
 	public  void Init(mTonBehaviour s)
 	{
-		 mTonInjection temp = null;
-		temp = s.GetInject("m2");
-		if (null != temp)
-		{
-			if(temp.mGo != null)
-				m2= temp.mGo.GetComponent<Light>();
-		}
+		m2=(Light) s.get_object("m2","Light");
 
-		temp = s.GetInject("m3");
-		if (null != temp)
-		{
-			m3= temp.mInt;
-		}
+		m3=s.get_int("m3");
 
-		temp = s.GetInject("m4");
-		if (null != temp)
-		{
-			m4= temp.mText;
-		}
+		m4=s.get_string("m4");
 
-		temp = s.GetInject("m5");
-		if (null != temp)
-		{
-			m5= temp.mBool;
-		}
+		m5=s.get_bool("m5");
 
-		temp = s.GetInject("m6");
-		if (null != temp)
-		{
-			m6= temp.mGo;
-		}
+		m6=(GameObject) s.get_object("m6","GameObject");
 
-		temp = s.GetInject("m7");
-		if (null != temp)
-		{
-			if(temp.mGo != null)
-				m7= temp.mGo.GetComponent<Animation>();
-		}
+		m7=(Animation) s.get_object("m7","Animation");
 
 	}
 }
