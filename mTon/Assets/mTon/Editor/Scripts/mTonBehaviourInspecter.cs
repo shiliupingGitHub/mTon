@@ -35,7 +35,7 @@ public class mTonBehaviourInspecter : Editor {
             }
             sb.Append("\n");
             sb.Append("\t");
-            sb.Append("public	override void Init(mTonBehaviour s)\n\t{");
+            sb.Append("public  void Init(mTonBehaviour s)\n\t{");
             sb.Append("\n\t\t mTonInjection temp = null;");
             foreach(var f in fields)
             {

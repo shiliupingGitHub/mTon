@@ -6,18 +6,47 @@ public  partial class test1 : mTonBase
 	string	m4;
 	bool	m5;
 	GameObject	m6;
-	public	override void Init(mTonBehaviour s)
+	Animation	m7;
+	public  void Init(mTonBehaviour s)
 	{
-		if (null != s.GetInject("m2"))
-			m2= s.GetInject("m2").mGo.GetComponent<Light>();
+		 mTonInjection temp = null;
+		temp = s.GetInject("m2");
+		if (null != temp)
+		{
+			if(temp.mGo != null)
+				m2= temp.mGo.GetComponent<Light>();
+		}
 
-		m3= s.GetInject("m3").mInt;
+		temp = s.GetInject("m3");
+		if (null != temp)
+		{
+			m3= temp.mInt;
+		}
 
-		m4= s.GetInject("m4").mText;
+		temp = s.GetInject("m4");
+		if (null != temp)
+		{
+			m4= temp.mText;
+		}
 
-		m5= s.GetInject("m5").mBool;
+		temp = s.GetInject("m5");
+		if (null != temp)
+		{
+			m5= temp.mBool;
+		}
 
-		m6= s.GetInject("m6").mGo;
+		temp = s.GetInject("m6");
+		if (null != temp)
+		{
+			m6= temp.mGo;
+		}
+
+		temp = s.GetInject("m7");
+		if (null != temp)
+		{
+			if(temp.mGo != null)
+				m7= temp.mGo.GetComponent<Animation>();
+		}
 
 	}
 }
