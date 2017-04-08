@@ -185,8 +185,9 @@ public class mTonBehaviourInspecter : Editor {
                 break;
             }
         }
-        string szType = mFields[key].ToString();
-        string szTitle = key + "(" + szType + ")";
+       
+        string szType = mFields[selectStr[selectId]].ToString();
+        string szTitle = selectStr[selectId] + "(" + szType + ")";
         selectId = EditorGUILayout.Popup(szTitle, selectId, selectStr.ToArray());
         if (key != selectStr[selectId])
         {
